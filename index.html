@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ritmo y Melodía - Figuras y Pentagrama</title>
+    <!-- Carga de Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configuración de color y fuente para Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#6366f1', // Indigo 500
+                        'secondary': '#facc15', // Amber 400
+                        'bg-light': '#fef3c7', // Amber 100
+                        'bg-dark': '#1e293b', // Slate 800
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    keyframes: {
+                        wiggle: {
+                            '0%, 100%': { transform: 'rotate(-3deg)' },
+                            '50%': { transform: 'rotate(3deg)' },
+                        },
+                        pulse_small: {
+                            '0%, 100%': { transform: 'scale(1)' },
+                            '50%': { transform: 'scale(1.05)' },
+                        }
+                    },
+                    animation: {
+                        wiggle: 'wiggle 0.3s ease-in-out',
+                        pulse_small: 'pulse_small 2s ease-in-out infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Estilos base del pentagrama de APRENDER (Repaso) */
+        .staff-container {
+            position: relative;
+            height: 170px; 
+            width: 100%;
+            margin-top: 20px;
+            overflow: hidden; 
+        }
+
+        /* Estilos del pentagrama de JUGAR (Desafío) */
+        .game-staff-container {
+            position: relative;
+            height: 150px; /* Un poco más pequeño para el juego */
+            width: 80%;
+            max-width: 300px;
+            margin: 20px auto;
+            /* LÍNEA DE RESPALDO: CONTIENE EL BORDE ANTERIOR */
+            border: 1px solid #ddd; 
+            background-color: #fff;
+        }
+
+        /* Clase para dibujar las líneas del pentagrama (Común) */
+        .staff-line, .game-staff-line {
+            position: absolute;
+            width: 100%;
+            height: 1px;
+            background: #000;
+        }
+        
+        /* Clase para la Clave de Sol (Común) */
+        .treble-clef {
+            position: absolute;
+            line-height: 1;
+            color: #000;
+            z-index: 10; 
+            font-size: 150px; 
+            top: 50%;
+            transform: translateY(-50%); 
+        }
+
+        /* --- Posicionamiento de Notas (Clases base) --- */
+        
+        .note {
+            position: absolute;
+            line-height: 1;
+            animation: pulse_small 2s infinite;
+            width: 1px; 
+            height: 1px;
+        }
+
+        .note-dot {
+            display: block;
+            /* TAMAÑO DE NOTA GORDO: 18px */
+            width: 18px; 
+            height: 18px;
+            background-color: #000;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%; 
+            left: 50%;
+            transform: translate(-50%, -50%); 
+        }
+
+        /* Clase para Líneas Adicionales */
+        .ledger-line { 
+            position: absolute; 
+            width: 35px; 
+            height: 1px; 
+            background-color: #000; 
+            z-index: 5; 
+        }
+        
+        /* Estilos específicos para las figuras del Árbol de División Rítmica */
+        .figure-box {
+            border-radius: 0.75rem; /* rounded-xl */
+            padding: 0.5rem;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); /* shadow-lg */
+            transition: transform 0.2s;
+            position: relative;
+            z-index: 10;
+        }
+
+        #rhythm-tree-container {
+            padding: 30px; /* Aumentado el padding para dar espacio al canvas */
+        }
+
+        /* ESTILO ESPECÍFICO PARA EL ANCHO DEL ÁRBOL */
+        /* Contenedor fijo para controlar el ancho de los niveles */
+        #rhythm-tree-content {
+            max-width: 500px; /* Ancho máximo para todos los niveles */
+            width: 100%;
+        }
+
+        /* Ajuste para la Redonda (Nivel 1): Ocupa el 100% del contenedor #rhythm-tree-content */
+        #l1-redonda {
+            width: 100%; 
+            max-width: 500px;
+        }
+    </style>
+</head>
+<body class="bg-bg-light font-sans min-h-screen p-4 sm:p-8 flex flex-col items-center">
+
+    <div id="app" class="w-full max-w-4xl bg-white shadow-2xl rounded-3xl p-6 sm:p-10 border-4 border-primary/50">
+        
+        <!-- Encabezado y Navegación -->
+        <header class="text-center mb-8">
+            <h1 class="text-5xl font-extrabold text-primary mb-2">🎵 Ritmo y Melodía 🎶</h1>
+            <p class="text-lg text-bg-dark/70 italic">¡Aprende y juega con la música!</p>
+        </header>
+
+        <nav class="flex justify-center space-x-4 mb-8 p-3 bg-gray-100 rounded-xl shadow-inner">
+            <button id="btn-aprender" onclick="setView('learn')" class="nav-btn bg-primary text-white hover:bg-primary/90 transition duration-200 font-bold py-2 px-6 rounded-xl shadow-md">
+                Aprender (Repaso)
+            </button>
+            <button id="btn-jugar" onclick="setView('game')" class="nav-btn bg-secondary text-bg-dark hover:bg-secondary/90 transition duration-200 font-bold py-2 px-6 rounded-xl shadow-md">
+                Jugar (Desafío)
+            </button>
+        </nav>
+
+        <!-- Contenedor Principal de Vistas -->
+        <div id="content-container">
+            
+            <!-- 1. Sección APRENDER (Repaso) -->
+            <section id="learn-view" class="space-y-8">
+                <h2 class="text-3xl font-bold text-primary border-b-2 border-primary pb-2 mb-6">Figuras Musicales y Duración</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Redonda -->
+                    <div class="p-6 bg-purple-100 rounded-2xl shadow-lg border-l-4 border-primary transform hover:scale-[1.02] transition">
+                        <h3 class="text-2xl font-extrabold text-primary mb-4 text-center">Redonda (4 Tiempos)</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="text-center p-3 bg-white rounded-lg shadow-inner border border-primary/50">
+                                <p class="font-bold text-lg text-primary">La Figura</p>
+                                <span class="text-6xl" role="img" aria-label="Redonda">&#x1D15D;</span>
+                            </div>
+                            <div class="text-center p-3 bg-white rounded-lg shadow-inner border border-secondary/50">
+                                <p class="font-bold text-lg text-secondary">Su Silencio</p>
+                                <span class="text-6xl" role="img" aria-label="Silencio de Redonda">&#x1D13B;</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Blanca -->
+                    <div class="p-6 bg-yellow-100 rounded-2xl shadow-lg border-l-4 border-secondary transform hover:scale-[1.02] transition">
+                        <h3 class="text-2xl font-extrabold text-primary mb-4 text-center">Blanca (2 Tiempos)</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="text-center p-3 bg-white rounded-lg shadow-inner border border-primary/50">
+                                <p class="font-bold text-lg text-primary">La Figura</p>
+                                <span class="text-6xl" role="img" aria-label="Blanca">&#x1D15E;</span>
+                            </div>
+                            <div class="text-center p-3 bg-white rounded-lg shadow-inner border border-secondary/50">
+                                <p class="font-bold text-lg text-secondary">Su Silencio</p>
+                                <span class="text-6xl" role="img" aria-label="Silencio de Blanca">&#x1D13C;</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Negra -->
+                    <div class="p-6 bg-green-100 rounded-2xl shadow-lg border-l-4 border-primary transform hover:scale-[1.02] transition">
+                        <h3 class="text-2xl font-extrabold text-primary mb-4 text-center">Negra (1 Tiempo)</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="text-center p-3 bg-white rounded-lg shadow-inner border border-primary/50">
+                                <p class="font-bold text-lg text-primary">La Figura</p>
+                                <span class="text-6xl" role="img" aria-label="Negra">&#x1D15F;</span>
+                            </div>
+                            <div class="text-center p-3 bg-white rounded-lg shadow-inner border border-secondary/50">
+                                <p class="font-bold text-lg text-secondary">Su Silencio</p>
+                                <span class="text-6xl" role="img" aria-label="Silencio de Negra">&#x1D13D;</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Corchea -->
+                    <div class="p-6 bg-red-100 rounded-2xl shadow-lg border-l-4 border-secondary transform hover:scale-[1.02] transition">
+                        <h3 class="text-2xl font-extrabold text-primary mb-4 text-center">Corchea (1/2 Tiempo)</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="text-center p-3 bg-white rounded-lg shadow-inner border border-primary/50">
+                                <p class="font-bold text-lg text-primary">La Figura</p>
+                                <span class="text-6xl" role="img" aria-label="Corchea">&#x1D160;</span>
+                            </div>
+                            <div class="text-center p-3 bg-white rounded-lg shadow-inner border border-secondary/50">
+                                <p class="font-bold text-lg text-secondary">Su Silencio</p>
+                                <span class="text-6xl" role="img" aria-label="Silencio de Corchea">&#x1D13E;</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ÁRBOL DE DIVISIÓN RÍTMICA (CON CONEXIONES) -->
+                <h2 class="text-3xl font-bold text-primary border-b-2 border-primary pb-2 mb-6 mt-8">Árbol de División Rítmica</h2>
+                <div id="rhythm-tree-container" class="relative p-6 bg-gray-100 rounded-2xl shadow-xl border-2 border-primary/50 max-w-2xl mx-auto">
+                    <canvas id="rhythm-canvas" class="absolute inset-0 z-0"></canvas> 
+                    <div id="rhythm-tree" class="relative z-10 flex flex-col items-center space-y-6">
+                        
+                        <!-- Contenedor interno para fijar el ancho base (500px) -->
+                        <div id="rhythm-tree-content" class="flex flex-col items-center space-y-6">
+
+                            <!-- Nivel 1: Redonda (Ahora ocupa el 100% del ancho base de 500px) -->
+                            <div class="flex justify-center w-full"> 
+                                <div id="l1-redonda" class="figure-box bg-primary text-white p-3">
+                                    <p class="text-xl font-bold">4 Tiempos</p>
+                                    <span class="text-5xl block" role="img" aria-label="Redonda">&#x1D15D;</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Nivel 2: Blancas (Suman el 100% del ancho base) -->
+                            <div class="flex justify-around w-full">
+                                <!-- w-1/2 con margen para que sumen el 100% -->
+                                <div id="l2-blanca-1" class="figure-box bg-yellow-400 text-bg-dark p-3 w-[48%] mx-1">
+                                    <p class="text-xl font-bold">2 Tiempos</p>
+                                    <span class="text-5xl block" role="img" aria-label="Blanca">&#x1D15E;</span>
+                                </div>
+                                <div id="l2-blanca-2" class="figure-box bg-yellow-400 text-bg-dark p-3 w-[48%] mx-1">
+                                    <p class="text-xl font-bold">2 Tiempos</p>
+                                    <span class="text-5xl block" role="img" aria-label="Blanca">&#x1D15E;</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Nivel 3: Negras (Suman el 100% del ancho base) -->
+                            <div class="flex justify-around w-full">
+                                <!-- w-1/4 con margen para que sumen el 100% -->
+                                <div id="l3-negra-1" class="figure-box bg-green-400 text-bg-dark p-2 w-[23%] mx-0.5">
+                                    <p class="text-base font-bold">1 Tiempo</p>
+                                    <span class="text-4xl block" role="img" aria-label="Negra">&#x1D15F;</span>
+                                </div>
+                                <div id="l3-negra-2" class="figure-box bg-green-400 text-bg-dark p-2 w-[23%] mx-0.5">
+                                    <p class="text-base font-bold">1 Tiempo</p>
+                                    <span class="text-4xl block" role="img" aria-label="Negra">&#x1D15F;</span>
+                                </div>
+                                <div id="l3-negra-3" class="figure-box bg-green-400 text-bg-dark p-2 w-[23%] mx-0.5">
+                                    <p class="text-base font-bold">1 Tiempo</p>
+                                    <span class="text-4xl block" role="img" aria-label="Negra">&#x1D15F;</span>
+                                </div>
+                                <div id="l3-negra-4" class="figure-box bg-green-400 text-bg-dark p-2 w-[23%] mx-0.5">
+                                    <p class="text-base font-bold">1 Tiempo</p>
+                                    <span class="text-4xl block" role="img" aria-label="Negra">&#x1D15F;</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Nivel 4: Corcheas (Suman el 100% del ancho base - Ahora son 1/8 del total, más pequeños que 1/4) -->
+                            <div class="flex justify-around w-full">
+                                <!-- w-1/8 con margen. Usamos w-[11.5%] para dar espacio -->
+                                <div id="l4-corchea-1" class="figure-box bg-red-400 text-bg-dark p-1 w-[11.5%] mx-0.5">
+                                    <p class="text-xs font-bold leading-none">1/2 T</p>
+                                    <span class="text-3xl block leading-tight" role="img" aria-label="Corchea">&#x1D160;</span>
+                                </div>
+                                <div id="l4-corchea-2" class="figure-box bg-red-400 text-bg-dark p-1 w-[11.5%] mx-0.5">
+                                    <p class="text-xs font-bold leading-none">1/2 T</p>
+                                    <span class="text-3xl block leading-tight" role="img" aria-label="Corchea">&#x1D160;</span>
+                                </div>
+                                <div id="l4-corchea-3" class="figure-box bg-red-400 text-bg-dark p-1 w-[11.5%] mx-0.5">
+                                    <p class="text-xs font-bold leading-none">1/2 T</p>
+                                    <span class="text-3xl block leading-tight" role="img" aria-label="Corchea">&#x1D160;</span>
+                                </div>
+                                <div id="l4-corchea-4" class="figure-box bg-red-400 text-bg-dark p-1 w-[11.5%] mx-0.5">
+                                    <p class="text-xs font-bold leading-none">1/2 T</p>
+                                    <span class="text-3xl block leading-tight" role="img" aria-label="Corchea">&#x1D160;</span>
+                                </div>
+                                <div id="l4-corchea-5" class="figure-box bg-red-400 text-bg-dark p-1 w-[11.5%] mx-0.5">
+                                    <p class="text-xs font-bold leading-none">1/2 T</p>
+                                    <span class="text-3xl block leading-tight" role="img" aria-label="Corchea">&#x1D160;</span>
+                                </div>
+                                <div id="l4-corchea-6" class="figure-box bg-red-400 text-bg-dark p-1 w-[11.5%] mx-0.5">
+                                    <p class="text-xs font-bold leading-none">1/2 T</p>
+                                    <span class="text-3xl block leading-tight" role="img" aria-label="Corchea">&#x1D160;</span>
+                                </div>
+                                <div id="l4-corchea-7" class="figure-box bg-red-400 text-bg-dark p-1 w-[11.5%] mx-0.5">
+                                    <p class="text-xs font-bold leading-none">1/2 T</p>
+                                    <span class="text-3xl block leading-tight" role="img" aria-label="Corchea">&#x1D160;</span>
+                                </div>
+                                <div id="l4-corchea-8" class="figure-box bg-red-400 text-bg-dark p-1 w-[11.5%] mx-0.5">
+                                    <p class="text-xs font-bold leading-none">1/2 T</p>
+                                    <span class="text-3xl block leading-tight" role="img" aria-label="Corchea">&#x1D160;</span>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Repaso de Pentagrama (TEXTO MODIFICADO AQUÍ con <strong>) -->
+                <h2 class="text-3xl font-bold text-primary border-b-2 border-primary pb-2 mb-6 mt-8">El Pentagrama y las Notas</h2>
+                
+                <div class="p-4 sm:p-8 bg-white shadow-xl border-2 border-primary/20 rounded-md">
+                    <p id="staff-description" class="text-lg mb-4 text-bg-dark/80">
+                        El pentagrama tiene <strong>cinco líneas</strong> y <strong>cuatro espacios</strong>. La <strong>Clave de Sol</strong> nos indica que la nota <strong>Sol</strong> se escribe en la segunda línea. Aquí están las notas de la escala de Do mayor:
+                    </p>
+                    <div id="staff-container" class="staff-container bg-white">
+                        <div class="treble-clef" style="left: 5px;">&#x1D11E;</div> 
+                        <div class="staff-line" style="top: 135px;"></div> 
+                        <div class="staff-line" style="top: 110px;"></div>  
+                        <div class="staff-line" style="top: 85px;"></div>  
+                        <div class="staff-line" style="top: 60px;"></div>  
+                        <div class="staff-line" style="top: 35px;"></div>  
+                    </div>
+                    <div id="note-labels" class="relative mt-6 h-10"></div>
+                </div>
+            </section>
+
+            <!-- 2. Sección JUGAR (Desafío) -->
+            <section id="game-view" class="hidden">
+                <h2 class="text-3xl font-bold text-secondary text-center border-b-2 border-secondary pb-2 mb-6">🏆 Desafío Musical 🏆</h2>
+                
+                <div id="game-area" class="text-center p-6 bg-bg-light rounded-2xl shadow-2xl border-4 border-secondary space-y-6">
+                    
+                    <!-- Marcador y Mensaje -->
+                    <div class="flex flex-col sm:flex-row justify-between items-center text-xl font-bold text-bg-dark">
+                        <p class="order-2 sm:order-1 mt-2 sm:mt-0">Puntuación: <span id="score" class="text-primary">0</span></p>
+                        <p id="message" class="order-1 sm:order-2 text-lg h-8 font-semibold italic text-center"></p>
+                    </div>
+
+                    <!-- BARRA DE PROGRESO Y CONTADOR -->
+                    <div class="w-full bg-gray-200 rounded-full h-4 mb-4">
+                        <div id="progress-bar-fill" class="bg-primary h-4 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                    <p id="progress-text" class="text-sm font-medium text-gray-700 mb-6">Presiona "Empezar Desafío" para comenzar</p>
+
+
+                    <!-- Pregunta (Elemento Musical/Pentagrama) -->
+                    <div class="p-8 bg-white rounded-xl shadow-inner mb-6 min-h-[250px] flex flex-col justify-center items-center">
+                        <p id="question-prompt" class="text-2xl font-semibold mb-4 text-primary">Presiona el botón de inicio</p>
+                        
+                        <!-- Contenedor para la Figura Musical (Ritmo) -->
+                        <div id="rhythm-question-element" class="text-9xl text-bg-dark transform transition duration-500 hidden">
+                            <!-- Aquí va la figura musical/silencio -->
+                        </div>
+                        
+                        <!-- Contenedor para la Pregunta de Nota (Pentagrama) -->
+                        <div id="note-question-element" class="game-staff-container hidden">
+                            <!-- Clave y líneas estáticas del pentagrama de juego -->
+                            <div class="treble-clef" style="left: 5px; top: 75px; transform: translateY(-50%); font-size: 130px;">&#x1D11E;</div>
+                            <div class="game-staff-line" style="top: 115px;"></div> <!-- Línea 1 (Mi) -->
+                            <div class="game-staff-line" style="top: 92.5px;"></div>  <!-- Línea 2 (Sol) -->
+                            <div class="game-staff-line" style="top: 70px;"></div>  <!-- Línea 3 (Si) -->
+                            <div class="game-staff-line" style="top: 47.5px;"></div>  <!-- Línea 4 (Re) -->
+                            <div class="game-staff-line" style="top: 25px;"></div>  <!-- Línea 5 (Fa) -->
+                            <!-- La nota dinámica se añade aquí -->
+                        </div>
+
+                        <!-- Nombre de la Figura (Opcional, según dificultad) -->
+                        <p id="question-name" class="text-xl font-bold text-gray-600 mt-2 h-6"></p>
+                    </div>
+
+                    <!-- Opciones de Respuesta -->
+                    <div id="options-container" class="grid grid-cols-2 gap-4">
+                        <!-- Los botones se generan con JavaScript -->
+                    </div>
+
+                    <!-- Botón para empezar/siguiente -->
+                    <button id="next-button" onclick="handleNextOrRestart()" class="w-full mt-6 bg-secondary text-bg-dark font-extrabold py-3 px-6 rounded-xl text-xl shadow-lg hover:bg-secondary/90 transition duration-200">
+                        Empezar Desafío
+                    </button>
+                    
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // === VARIABLES GLOBALES Y DATOS ===
+        const MAX_QUESTIONS = 10;
+        const POINTS_PER_CORRECT_ANSWER = 10; // Puntuación ajustada a 10
+        let currentView = 'learn';
+        let score = 0;
+        let questionCounter = 0;
+        let currentQuestion = null;
+        let isGameActive = false;
+        
+        // Datos de preguntas de Ritmo
+        const rhythmData = [
+            { symbol: '&#x1D15D;', name: 'Redonda', answer: '4 Tiempos' },
+            { symbol: '&#x1D15E;', name: 'Blanca', answer: '2 Tiempos' },
+            { symbol: '&#x1D15F;', name: 'Negra', answer: '1 Tiempo' },
+            { symbol: '&#x1D160;', name: 'Corchea', answer: '1/2 Tiempo' },
+            { symbol: '&#x1D13B;', name: 'Silencio de Redonda', answer: '4 Tiempos' },
+            { symbol: '&#x1D13C;', name: 'Silencio de Blanca', answer: '2 Tiempos' },
+            { symbol: '&#x1D13D;', name: 'Silencio de Negra', answer: '1 Tiempo' },
+            { symbol: '&#x1D13E;', name: 'Silencio de Corchea', answer: '1/2 Tiempo' },
+        ];
+        const allDurations = ['4 Tiempos', '2 Tiempos', '1 Tiempo', '1/2 Tiempo', '3 Tiempos', '1/4 Tiempo']; 
+        
+        // Datos de preguntas de Lectura de Notas (posición vertical en px)
+        // La distancia vertical entre líneas y espacios es de 11.25px en el pentagrama de juego (115-25 = 90px / 8 pasos = 11.25px)
+        const NOTES_DATA = [
+            // C4 (Do): Línea adicional. Posición: 137.5
+            { name: 'Do', position: 137.5, hasLedger: true }, 
+            // D4 (Re): Espacio debajo de la Línea 1. Posición: 126.25px
+            { name: 'Re', position: 126.25, hasLedger: false }, 
+            // E4 (Mi): Línea 1. Posición: 115px
+            { name: 'Mi', position: 115, hasLedger: false }, 
+            // F4 (Fa): Espacio 1. Posición: 103.75px
+            { name: 'Fa', position: 103.75, hasLedger: false }, 
+            // G4 (Sol): Línea 2. Posición: 92.5px
+            { name: 'Sol', position: 92.5, hasLedger: false }, 
+            // A4 (La): Espacio 2. Posición: 81.25px
+            { name: 'La', position: 81.25, hasLedger: false }, 
+            // B4 (Si): Línea 3. Posición: 70px
+            { name: 'Si', position: 70, hasLedger: false }, 
+            // C5 (Do): Espacio 3. Posición: 58.75px
+            { name: 'Do', position: 58.75, hasLedger: false }, 
+            // D5 (Re): Línea 4. Posición: 47.5px
+            { name: 'Re', position: 47.5, hasLedger: false }, 
+            // E5 (Mi): Espacio 4. Posición: 36.25px
+            { name: 'Mi', position: 36.25, hasLedger: false }, 
+            // F5 (Fa): Línea 5. Posición: 25px
+            { name: 'Fa', position: 25, hasLedger: false }, 
+        ];
+        const allNoteNames = NOTES_DATA.map(n => n.name).filter((value, index, self) => self.indexOf(value) === index); // ['Do', 'Re', 'Mi', 'Fa', 'Sol', 'La', 'Si']
+        
+        // Posiciones horizontales para las notas de repaso
+        const HORIZONTAL_POSITIONS_LEARN = [20, 30, 40, 50, 60, 70, 80, 90];
+
+
+        // === CONTROL DE VISTAS Y REPASO ===
+
+        function setView(view) {
+            currentView = view;
+            document.getElementById('learn-view').classList.toggle('hidden', view !== 'learn');
+            document.getElementById('game-view').classList.toggle('hidden', view !== 'game');
+            
+            document.getElementById('btn-aprender').classList.toggle('bg-primary', view === 'learn');
+            document.getElementById('btn-aprender').classList.toggle('bg-secondary/50', view !== 'learn');
+            document.getElementById('btn-jugar').classList.toggle('bg-primary', view === 'game');
+            document.getElementById('btn-jugar').classList.toggle('bg-secondary/50', view !== 'game');
+
+            if (view === 'game' && !isGameActive) {
+                resetGame();
+            }
+        }
+        
+        function renderStaffNotes() {
+            // (Función para renderizar las notas del pentagrama de Repaso)
+            const staffContainer = document.getElementById('staff-container');
+            const noteLabelsContainer = document.getElementById('note-labels');
+            
+            staffContainer.querySelectorAll('.note, .ledger-line').forEach(el => el.remove());
+            noteLabelsContainer.innerHTML = '';
+            
+            const LEARN_NOTES_DATA = NOTES_DATA.slice(0, 8); // Solo C4 a C5 para el repaso simple
+            
+            LEARN_NOTES_DATA.forEach((note, index) => {
+                const leftPercent = HORIZONTAL_POSITIONS_LEARN[index];
+                
+                // C4 (Do) = 160px. D4 (Re) = 160-12.5 = 147.5px. E4 (Mi) = 147.5-12.5 = 135px (Línea 1 del Staff)
+                // Usaremos 160px para C4 (Do) y 135px para E4 (Mi, la primera línea visible)
+                const topPositionLearn = 160 - (index * 12.5); 
+                
+                const noteElement = document.createElement('div');
+                noteElement.className = 'note'; 
+                noteElement.style.top = `${topPositionLearn}px`; 
+                noteElement.style.left = `${leftPercent}%`;
+                
+                const dot = document.createElement('span');
+                dot.className = 'note-dot';
+                noteElement.appendChild(dot);
+                
+                // Colocar la línea adicional (ledger line)
+                if (note.name === 'Do' && index === 0) {
+                    const externalLedgerLine = document.createElement('div');
+                    externalLedgerLine.className = 'ledger-line';
+                    // La línea adicional debe centrarse en la misma posición 'top' que la nota (160px)
+                    externalLedgerLine.style.top = `${topPositionLearn}px`; 
+                    externalLedgerLine.style.left = `${leftPercent}%`; 
+                    externalLedgerLine.style.transform = 'translateX(-50%) translateY(-50%)'; 
+                    staffContainer.appendChild(externalLedgerLine);
+                }
+                
+                staffContainer.appendChild(noteElement);
+                
+                const labelItem = document.createElement('div');
+                labelItem.textContent = note.name;
+                labelItem.className = 'text-center text-xl font-extrabold text-primary absolute hover:text-secondary transition duration-100';
+                labelItem.style.left = `${leftPercent}%`;
+                labelItem.style.transform = 'translateX(-50%)';
+                labelItem.style.top = '0px'; 
+                
+                noteLabelsContainer.appendChild(labelItem);
+            });
+        }
+
+
+        // === FUNCIONES DEL ÁRBOL RÍTMICO CONEXIONES ===
+        function drawRhythmTreeConnections() {
+            const container = document.getElementById('rhythm-tree-container');
+            const canvas = document.getElementById('rhythm-canvas');
+            
+            if (!container || !canvas) return;
+
+            // Ajustar el tamaño del canvas al contenedor
+            canvas.width = container.offsetWidth;
+            canvas.height = container.offsetHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = '#9ca3af'; // gray-400
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            
+            const lineOffset = 15; // Desplazamiento vertical para la línea horizontal
+            
+            /**
+             * Obtiene el centro inferior de un elemento relativo al contenedor del árbol.
+             * @param {string} id - ID del elemento.
+             * @returns {{x: number, y: number}} Coordenadas (x, y).
+             */
+            function getBottomCenter(id) {
+                const el = document.getElementById(id);
+                if (!el) return { x: 0, y: 0 };
+                const rect = el.getBoundingClientRect();
+                const containerRect = container.getBoundingClientRect();
+                
+                // Coordenada Y: Borde inferior del elemento + margen de seguridad
+                const y = (rect.bottom - containerRect.top);
+                // Coordenada X: Centro horizontal del elemento
+                const x = (rect.left - containerRect.left) + rect.width / 2;
+                return { x, y };
+            }
+
+            /**
+             * Obtiene el centro superior de un elemento relativo al contenedor del árbol.
+             * @param {string} id - ID del elemento.
+             * @returns {{x: number, y: number}} Coordenadas (x, y).
+             */
+            function getTopCenter(id) {
+                const el = document.getElementById(id);
+                if (!el) return { x: 0, y: 0 };
+                const rect = el.getBoundingClientRect();
+                const containerRect = container.getBoundingClientRect();
+                
+                // Coordenada Y: Borde superior del elemento
+                const y = (rect.top - containerRect.top);
+                // Coordenada X: Centro horizontal del elemento
+                const x = (rect.left - containerRect.left) + rect.width / 2;
+                return { x, y };
+            }
+
+            /**
+             * Dibuja las conexiones (1 vertical + 1 horizontal + 2 verticales)
+             * @param {string} parentId - ID de la figura musical superior.
+             * @param {string[]} childIds - Array de IDs de las figuras musicales inferiores.
+             */
+            function drawGroup(parentId, childIds) {
+                if (childIds.length === 0) return;
+                
+                const parentCenter = getBottomCenter(parentId);
+                const firstChildTop = getTopCenter(childIds[0]);
+                const lastChildTop = getTopCenter(childIds[childIds.length - 1]);
+                
+                // 1. Línea vertical desde el padre
+                const verticalStartPoint = { x: parentCenter.x, y: parentCenter.y };
+                const verticalEndPoint = { x: parentCenter.x, y: parentCenter.y + lineOffset };
+                
+                ctx.beginPath();
+                ctx.moveTo(verticalStartPoint.x, verticalStartPoint.y);
+                ctx.lineTo(verticalEndPoint.x, verticalEndPoint.y);
+                ctx.stroke();
+
+                // 2. Línea horizontal (desde el centro del primer hijo hasta el centro del último hijo)
+                const horizontalY = verticalEndPoint.y;
+                const horizontalStartX = firstChildTop.x;
+                const horizontalEndX = lastChildTop.x;
+
+                ctx.beginPath();
+                ctx.moveTo(horizontalStartX, horizontalY);
+                ctx.lineTo(horizontalEndX, horizontalY);
+                ctx.stroke();
+
+                // 3. Líneas verticales hacia los hijos
+                childIds.forEach(childId => {
+                    const childTop = getTopCenter(childId);
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(childTop.x, horizontalY);
+                    ctx.lineTo(childTop.x, childTop.y);
+                    ctx.stroke();
+                });
+            }
+
+            // Conexión Redonda (l1) a Blancas (l2)
+            drawGroup('l1-redonda', ['l2-blanca-1', 'l2-blanca-2']);
+
+            // Conexión Blanca 1 (l2) a Negras 1 y 2 (l3)
+            drawGroup('l2-blanca-1', ['l3-negra-1', 'l3-negra-2']);
+
+            // Conexión Blanca 2 (l2) a Negras 3 y 4 (l3)
+            drawGroup('l2-blanca-2', ['l3-negra-3', 'l3-negra-4']);
+
+            // Conexión Negra 1 (l3) a Corcheas 1 y 2 (l4)
+            drawGroup('l3-negra-1', ['l4-corchea-1', 'l4-corchea-2']);
+
+            // Conexión Negra 2 (l3) a Corcheas 3 y 4 (l4)
+            drawGroup('l3-negra-2', ['l4-corchea-3', 'l4-corchea-4']);
+
+            // Conexión Negra 3 (l3) a Corcheas 5 y 6 (l4)
+            drawGroup('l3-negra-3', ['l4-corchea-5', 'l4-corchea-6']);
+            
+            // Conexión Negra 4 (l3) a Corcheas 7 y 8 (l4)
+            drawGroup('l3-negra-4', ['l4-corchea-7', 'l4-corchea-8']);
+        }
+
+
+        // === FUNCIONES DEL JUEGO ===
+        
+        /**
+         * Maneja el clic en el botón, ya sea para iniciar, pasar a la siguiente pregunta o reiniciar.
+         */
+        function handleNextOrRestart() {
+            if (document.getElementById('next-button').textContent === 'Volver a Empezar') {
+                endGame(); // Llama a endGame() para reiniciar
+                resetGame(); // Llama a resetGame() para borrar la puntuación.
+            } else {
+                startOrNextQuestion();
+            }
+        }
+
+        /**
+         * Inicializa o reinicia el juego.
+         */
+        function resetGame() {
+            isGameActive = false;
+            score = 0;
+            questionCounter = 0;
+            document.getElementById('score').textContent = score;
+            document.getElementById('next-button').textContent = 'Empezar Desafío';
+            document.getElementById('next-button').classList.remove('hidden');
+            document.getElementById('message').textContent = '¡Acepta el desafío!';
+            document.getElementById('question-prompt').textContent = 'Presiona el botón de inicio';
+            document.getElementById('options-container').innerHTML = '';
+            document.getElementById('rhythm-question-element').classList.add('hidden');
+            document.getElementById('note-question-element').classList.add('hidden');
+            document.getElementById('question-name').textContent = '';
+            updateProgress();
+        }
+
+        /**
+         * Llama a la siguiente pregunta o inicia el juego.
+         */
+        function startOrNextQuestion() {
+            if (!isGameActive) {
+                isGameActive = true;
+                document.getElementById('message').textContent = '¡Mucha suerte! 🍀';
+            }
+            
+            // Verificar límite de preguntas
+            if (questionCounter >= MAX_QUESTIONS) {
+                endGame();
+                return;
+            }
+
+            questionCounter++;
+            updateProgress();
+            generateQuestion();
+            document.getElementById('next-button').textContent = 'Siguiente Pregunta';
+            document.getElementById('next-button').classList.add('hidden');
+        }
+
+        /**
+         * Actualiza la barra de progreso.
+         */
+        function updateProgress() {
+            const progressText = document.getElementById('progress-text');
+            const progressBar = document.getElementById('progress-bar-fill');
+            
+            if (questionCounter === 0) {
+                progressText.textContent = ``;
+                progressBar.style.width = `0%`;
+            } else {
+                progressText.textContent = `Pregunta ${questionCounter} de ${MAX_QUESTIONS}`;
+                const percentage = (questionCounter / MAX_QUESTIONS) * 100;
+                progressBar.style.width = `${percentage}%`;
+            }
+        }
+        
+        /**
+         * Selecciona un tipo de pregunta y genera sus opciones. IMPLEMENTA PROGRESIÓN DE DIFICULTAD
+         */
+        function generateQuestion() {
+            // Limpiar la animación anterior
+            document.getElementById('rhythm-question-element').classList.remove('animate-wiggle', 'animate-pulse_small');
+            document.getElementById('note-question-element').classList.remove('animate-wiggle', 'animate-pulse_small');
+
+            let type;
+            let showName = false;
+            
+            // Lógica de progresión de dificultad (basada en el contador de preguntas)
+            if (questionCounter <= 3) {
+                // FÁCIL: Preguntas de duración con el nombre de la figura visible
+                type = 'duration';
+                showName = true;
+            } else if (questionCounter <= 7) {
+                // MEDIO: Preguntas de duración sin el nombre de la figura (solo el símbolo)
+                type = 'duration';
+                showName = false;
+            } else {
+                // DIFÍCIL: Preguntas de lectura de notas en el pentagrama
+                type = 'note_reading';
+            }
+
+            if (type === 'duration') {
+                currentQuestion = generateDurationQuestion(showName);
+            } else {
+                currentQuestion = generateNoteQuestion();
+            }
+            
+            document.getElementById('question-prompt').textContent = currentQuestion.prompt;
+            document.getElementById('message').textContent = 'Elige la respuesta correcta';
+            renderOptions(currentQuestion.options, currentQuestion.type);
+            enableButtons();
+        }
+
+        /**
+         * Genera una pregunta de duración (Ritmo).
+         * @param {boolean} showName - Si debe mostrar el nombre de la figura (para el nivel fácil).
+         */
+        function generateDurationQuestion(showName) {
+            // Ocultar el pentagrama y mostrar el elemento de ritmo
+            document.getElementById('rhythm-question-element').classList.remove('hidden');
+            document.getElementById('note-question-element').classList.add('hidden');
+            
+            const randomIndex = Math.floor(Math.random() * rhythmData.length);
+            const data = rhythmData[randomIndex];
+            
+            document.getElementById('rhythm-question-element').innerHTML = data.symbol;
+            
+            // Control de dificultad: Muestra u oculta el nombre
+            if (showName) {
+                document.getElementById('question-name').textContent = `(${data.name})`;
+            } else {
+                document.getElementById('question-name').textContent = '';
+            }
+            
+            // Generar opciones de duración
+            let options = [data.answer];
+            const incorrectOptions = allDurations.filter(d => d !== data.answer);
+            while (options.length < 4) {
+                const randomIncorrect = incorrectOptions[Math.floor(Math.random() * incorrectOptions.length)];
+                if (!options.includes(randomIncorrect)) {
+                    options.push(randomIncorrect);
+                }
+            }
+            options.sort(() => Math.random() - 0.5);
+            
+            return {
+                type: 'duration',
+                prompt: '¿Cuánto dura esta figura musical?',
+                correctAnswer: data.answer,
+                options: options
+            };
+        }
+
+        /**
+         * Genera una pregunta de lectura de notas (Pentagrama).
+         */
+        function generateNoteQuestion() {
+            // Ocultar el elemento de ritmo y mostrar el pentagrama
+            document.getElementById('rhythm-question-element').classList.add('hidden');
+            document.getElementById('note-question-element').classList.remove('hidden');
+            document.getElementById('question-name').textContent = ''; 
+
+            // Seleccionamos una nota dentro del rango simple (C4 a F5)
+            const randomIndex = Math.floor(Math.random() * NOTES_DATA.length);
+            const data = NOTES_DATA[randomIndex];
+            
+            // Renderizar la nota en el pentagrama de juego
+            renderSingleNote(data);
+
+            // Generar opciones de notas
+            let options = [data.name];
+            let namesPool = [...allNoteNames];
+            
+            while (options.length < 4) {
+                const randomName = namesPool[Math.floor(Math.random() * namesPool.length)];
+                if (!options.includes(randomName) && randomName !== data.name) {
+                    options.push(randomName);
+                }
+                namesPool = namesPool.filter(n => !options.includes(n));
+            }
+            options.sort(() => Math.random() - 0.5);
+            
+            return {
+                type: 'note_reading',
+                prompt: '¿Qué nota es la que se muestra en el pentagrama?',
+                correctAnswer: data.name,
+                options: options,
+            };
+        }
+
+        /**
+         * Dibuja una única nota en el pentagrama del juego.
+         * @param {object} noteData - Los datos de la nota (posición, hasLedger, etc.).
+         */
+        function renderSingleNote(noteData) {
+            const gameStaff = document.getElementById('note-question-element');
+            gameStaff.querySelectorAll('.note, .ledger-line').forEach(el => el.remove());
+
+            const leftPercent = 50; 
+
+            const noteElement = document.createElement('div');
+            noteElement.className = 'note'; 
+            noteElement.style.top = `${noteData.position}px`; 
+            noteElement.style.left = `${leftPercent}%`;
+            
+            const dot = document.createElement('span');
+            dot.className = 'note-dot';
+            noteElement.appendChild(dot);
+            
+            if (noteData.hasLedger) {
+                const externalLedgerLine = document.createElement('div');
+                externalLedgerLine.className = 'ledger-line';
+                externalLedgerLine.style.top = `${noteData.position}px`; 
+                externalLedgerLine.style.left = `${leftPercent}%`; 
+                externalLedgerLine.style.transform = 'translateX(-50%) translateY(-50%)'; 
+                gameStaff.appendChild(externalLedgerLine);
+            }
+            
+            gameStaff.appendChild(noteElement);
+        }
+
+        /**
+         * Renderiza los botones de opción.
+         */
+        function renderOptions(options) {
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            
+            options.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.className = 'option-btn bg-white text-bg-dark font-extrabold py-4 rounded-xl text-lg shadow-md border-b-4 border-gray-300 hover:bg-gray-200 transition duration-150';
+                button.setAttribute('data-answer', option);
+                button.onclick = () => checkAnswer(option, button);
+                optionsContainer.appendChild(button);
+            });
+        }
+        
+        /**
+         * Verifica la respuesta seleccionada.
+         */
+        function checkAnswer(selectedAnswer, selectedButton) {
+            disableButtons();
+            
+            const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
+            const messageEl = document.getElementById('message');
+            const questionElementId = currentQuestion.type === 'duration' ? 'rhythm-question-element' : 'note-question-element';
+            const questionElement = document.getElementById(questionElementId);
+            
+            messageEl.classList.remove('text-green-600', 'text-red-600');
+
+            if (isCorrect) {
+                score += POINTS_PER_CORRECT_ANSWER; // Se suma 10 puntos
+                document.getElementById('score').textContent = score;
+                messageEl.textContent = '¡Correcto! 🎉';
+                messageEl.classList.add('text-green-600');
+                selectedButton.classList.remove('bg-white', 'hover:bg-gray-200', 'border-gray-300');
+                selectedButton.classList.add('bg-green-500', 'text-white', 'border-green-700', 'animate-pulse_small');
+                questionElement.classList.add('animate-pulse_small');
+
+            } else {
+                messageEl.textContent = 'Incorrecto. 😔';
+                messageEl.classList.add('text-red-600');
+                selectedButton.classList.remove('bg-white', 'hover:bg-gray-200', 'border-gray-300');
+                selectedButton.classList.add('bg-red-500', 'text-white', 'border-red-700');
+                questionElement.classList.add('animate-wiggle');
+                
+                document.querySelectorAll('.option-btn').forEach(btn => {
+                    if (btn.getAttribute('data-answer') === currentQuestion.correctAnswer) {
+                        btn.classList.add('bg-yellow-400', 'border-yellow-600');
+                    }
+                });
+            }
+            
+            document.getElementById('next-button').classList.remove('hidden');
+        }
+        
+        /**
+         * Finaliza el juego y muestra el resultado.
+         */
+        function endGame() {
+            isGameActive = false;
+            document.getElementById('message').classList.remove('text-green-600', 'text-red-600');
+            document.getElementById('message').textContent = `Fin del Desafío. Tu puntuación final es ${score} puntos.`;
+            document.getElementById('question-prompt').textContent = `Resultado: ${score} puntos de ${MAX_QUESTIONS * POINTS_PER_CORRECT_ANSWER} posibles.`;
+            document.getElementById('rhythm-question-element').classList.add('hidden');
+            document.getElementById('note-question-element').classList.add('hidden');
+            document.getElementById('options-container').innerHTML = ''; 
+            document.getElementById('question-name').textContent = '';
+            document.getElementById('next-button').textContent = 'Volver a Empezar'; // Texto del botón de reinicio
+            document.getElementById('next-button').classList.remove('hidden');
+            questionCounter = MAX_QUESTIONS;
+            updateProgress();
+        }
+
+        /**
+         * Deshabilita los botones de opción.
+         */
+        function disableButtons() {
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.disabled = true;
+            });
+        }
+        
+        /**
+         * Habilita los botones de opción.
+         */
+        function enableButtons() {
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.disabled = false;
+            });
+        }
+
+        // === INICIALIZACIÓN ===
+        window.onload = function() {
+            renderStaffNotes(); 
+            drawRhythmTreeConnections(); // Dibuja las conexiones
+            resetGame(); 
+            setView('learn');
+            
+            // Redibujar las líneas al cambiar el tamaño de la ventana
+            window.onresize = drawRhythmTreeConnections;
+        };
+    </script>
+</body>
+</html>
