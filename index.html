@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ritmo y Melodía - Figuras y Pentagrama</title>
-    <!-- Chosen Palette: Indigo Amber -->
-    <!-- Application Structure Plan: The application maintains the original's successful two-part structure: a 'Learn' section and a 'Game' section, accessible via primary navigation tabs. This task-oriented design is highly intuitive for an educational app. The 'Learn' section is re-architected into three distinct, scrollable modules (Rhythmic Figures, Division Tree, The Staff) to create a clear, guided learning path. The 'Game' section refines the UI into a focused "quiz cockpit" with a status dashboard, a central question area, and clear answer options, optimizing the user experience for quick decision-making during the challenge. This structure enhances the original concept by improving information hierarchy and user flow without altering the core educational purpose. -->
-    <!-- Visualization & Content Choices: 1. Rhythmic Figures: Report Info (Note values/rests) -> Goal (Inform/Compare) -> Viz (Styled HTML/Tailwind grid of cards) -> Interaction (Subtle hover effects) -> Justification (Grid is clearer for comparison than the original layout). 2. Rhythmic Division Tree: Report Info (Note hierarchy) -> Goal (Organize/Show Relationships) -> Viz (HTML elements connected by lines on an HTML Canvas) -> Interaction (Static visual) -> Justification (Canvas provides dynamic, responsive connectors without SVG/images, perfectly suiting the diagrammatic need). 3. Staff Notation: Report Info (Notes on staff) -> Goal (Inform) -> Viz (HTML/CSS representation of a musical staff) -> Interaction (Hover to highlight note names) -> Justification (Direct visual representation is essential for learning notation; interactivity reinforces it). 4. Quiz: Report Info (All concepts) -> Goal (Test knowledge) -> Viz (Interactive quiz UI) -> Interaction (Button clicks, dynamic feedback) -> Justification (Gamification is a proven method for engagement and knowledge retention). -->
-    <!-- CONFIRMATION: SVGs are now used for all rhythmic figures and rests to ensure cross-browser compatibility and scalability. -->
+    
+    <!-- Librerías Externas -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Configuración Tailwind -->
     <script>
         tailwind.config = {
             theme: {
@@ -43,12 +43,14 @@
             }
         }
     </script>
+
+    <!-- Estilos Personalizados -->
     <style>
         .staff-container { position: relative; height: 170px; width: 100%; margin-top: 20px; overflow: hidden; }
         .game-staff-container { position: relative; height: 150px; width: 80%; max-width: 300px; margin: 20px auto; background-color: #fff; }
         .staff-line, .game-staff-line { position: absolute; width: 100%; height: 1px; background: #000; }
         
-        /* Estilo general para la clave de sol */
+        /* Estilos Clave de Sol */
         .treble-clef { 
             position: absolute; 
             color: #000; 
@@ -56,33 +58,25 @@
             left: 5px; 
             top: 50%; 
             transform: translateY(-50%); 
-            /* Altura definida en la función renderTrebleClef o inline si es necesario */
             width: auto;
         }
-        
-        /* Ajuste de altura para la Clave de Sol en la sección de APRENDER (180px) */
-        #learn-treble-clef {
-             height: 180px; 
-             width: 90px;
-        }
+        #learn-treble-clef { height: 180px; width: 90px; }
+        #game-treble-clef { height: 150px; width: 75px; }
 
-        /* Ajuste de altura para la Clave de Sol en la sección de JUEGO (150px) */
-        #game-treble-clef {
-             height: 150px; 
-             width: 75px;
-        }
-
+        /* Estilos Notas */
         .note { position: absolute; line-height: 1; animation: pulse_small 2s infinite; width: 1px; height: 1px; }
-        .note-dot { display: block; width: 18px; height: 18px; background-color: #000; border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        .note-dot { display: block; width: 18px; height: 18px; border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
         .ledger-line { position: absolute; width: 35px; height: 1px; background-color: #000; z-index: 5; }
+        
+        /* Componentes Generales */
         .figure-box { border-radius: 0.75rem; padding: 0.5rem; text-align: center; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); transition: transform 0.2s; position: relative; z-index: 10; }
         #rhythm-tree-container { padding: 30px; }
         #rhythm-tree-content { max-width: 500px; width: 100%; }
         #l1-redonda { width: 100%; max-width: 500px; }
+        
         .nav-btn.active { background-color: #6366f1; color: white; }
         .nav-btn:not(.active) { background-color: #e5e7eb; color: #374151; }
         
-        /* Nuevo estilo para centrar los SVGs en los contenedores de las figuras */
         .figure-display {
             height: 90px;
             display: flex;
@@ -91,19 +85,10 @@
             margin: 0 auto;
         }
 
-        /* Estilos para la tabla de cifrado */
-        .cifrado-table th {
-            background-color: #6366f1;
-            color: white;
-        }
-        .cifrado-table td {
-            border: 1px solid #e5e7eb;
-            padding: 0.75rem;
-            text-align: center;
-        }
-        .cifrado-table tr:nth-child(even) {
-            background-color: #f3f4f6;
-        }
+        /* Tabla Cifrado */
+        .cifrado-table th { background-color: #6366f1; color: white; }
+        .cifrado-table td { border: 1px solid #e5e7eb; padding: 0.75rem; text-align: center; }
+        .cifrado-table tr:nth-child(even) { background-color: #f3f4f6; }
     </style>
 </head>
 <body class="bg-bg-light font-sans min-h-screen p-4 sm:p-8 flex flex-col items-center">
@@ -130,7 +115,7 @@
                 
                 <!-- SECCIÓN 1: FIGURAS MUSICALES -->
                 <div>
-                    <h2 class="text-3xl font-bold text-primary border-b-2 border-primary pb-2 mb-6">Figuras Musicales y Duración</h2>
+                    <h2 class="text-3xl font-bold text-primary border-b-2 border-primary pb-2 mb-6">Figuras musicales y duración</h2>
                     <p class="text-lg mb-6 text-bg-dark/80">
                         En la música, las figuras determinan cuánto tiempo dura un sonido. Cada figura tiene un silencio correspondiente que indica una pausa de la misma duración. ¡Aquí están las más comunes!
                     </p>
@@ -145,7 +130,7 @@
                                 </div>
                                 <div class="text-center p-3 bg-white rounded-lg shadow-inner border border-secondary/50">
                                     <p class="font-bold text-lg text-secondary">Su Silencio</p>
-                                    <div data-figure="Silencio de Redonda" class="figure-display w-full max-h-full"></div>
+                                    <div data-figure="Silencio de Redonda" class="figure-display w-full max-h-full text-gray-800"></div>
                                 </div>
                             </div>
                         </div>
@@ -159,7 +144,7 @@
                                 </div>
                                 <div class="text-center p-3 bg-white rounded-lg shadow-inner border border-secondary/50">
                                     <p class="font-bold text-lg text-secondary">Su Silencio</p>
-                                    <div data-figure="Silencio de Blanca" class="figure-display w-full max-h-full"></div>
+                                    <div data-figure="Silencio de Blanca" class="figure-display w-full max-h-full text-gray-800"></div>
                                 </div>
                             </div>
                         </div>
@@ -173,7 +158,7 @@
                                 </div>
                                 <div class="text-center p-3 bg-white rounded-lg shadow-inner border border-secondary/50">
                                     <p class="font-bold text-lg text-secondary">Su Silencio</p>
-                                    <div data-figure="Silencio de Negra" class="figure-display w-full max-h-full"></div>
+                                    <div data-figure="Silencio de Negra" class="figure-display w-full max-h-full text-gray-800"></div>
                                 </div>
                             </div>
                         </div>
@@ -187,7 +172,7 @@
                                 </div>
                                 <div class="text-center p-3 bg-white rounded-lg shadow-inner border border-secondary/50">
                                     <p class="font-bold text-lg text-secondary">Su Silencio</p>
-                                    <div data-figure="Silencio de Corchea" class="figure-display w-full max-h-full"></div>
+                                    <div data-figure="Silencio de Corchea" class="figure-display w-full max-h-full text-gray-800"></div>
                                 </div>
                             </div>
                         </div>
@@ -196,7 +181,7 @@
 
                 <!-- SECCIÓN 2: ÁRBOL RÍTMICO -->
                 <div>
-                    <h2 class="text-3xl font-bold text-primary border-b-2 border-primary pb-2 mb-6">Árbol de División Rítmica</h2>
+                    <h2 class="text-3xl font-bold text-primary border-b-2 border-primary pb-2 mb-6">Árbol de división rítmica</h2>
                     <p class="text-lg mb-6 text-bg-dark/80">
                         Este árbol muestra cómo las figuras de mayor duración se dividen en figuras más pequeñas. Una redonda equivale a dos blancas, cuatro negras u ocho corcheas. ¡Observa las conexiones!
                     </p>
@@ -283,12 +268,12 @@
 
                 <!-- SECCIÓN 3: PENTAGRAMA Y NOTAS -->
                 <div>
-                    <h2 class="text-3xl font-bold text-primary border-b-2 border-primary pb-2 mb-6">El Pentagrama y las Notas</h2>
+                    <h2 class="text-3xl font-bold text-primary border-b-2 border-primary pb-2 mb-6">El pentagrama y las notas</h2>
                     <div class="p-4 sm:p-8 bg-white shadow-xl border-2 border-primary/20 rounded-md">
                         <p class="text-lg mb-4 text-bg-dark/80">
                             El pentagrama tiene <strong>cinco líneas</strong> y <strong>cuatro espacios</strong> donde se escriben las notas. La <strong>Clave de Sol</strong> al principio nos indica que la nota <strong>Sol</strong> se escribe en la segunda línea, contando desde abajo. Aquí puedes ver las notas de la escala de Do mayor.
                         </p>
-                        <!-- Clave de Sol (Ahora un contenedor para el SVG inyectado por JS, con altura de 180px) -->
+                        <!-- Clave de Sol -->
                         <div id="staff-container" class="staff-container bg-white">
                             <div class="treble-clef" style="left: 5px;" id="learn-treble-clef"></div>
                             <div class="staff-line" style="top: 135px;"></div>
@@ -303,7 +288,7 @@
 
                 <!-- SECCIÓN 4: CIFRADO AMERICANO -->
                 <div>
-                    <h2 class="text-3xl font-bold text-secondary border-b-2 border-secondary pb-2 mb-6 mt-12">El Cifrado Americano</h2>
+                    <h2 class="text-3xl font-bold text-secondary border-b-2 border-secondary pb-2 mb-6 mt-12">El cifrado americano</h2>
                     <div class="p-4 sm:p-8 bg-gray-100 shadow-xl border-2 border-secondary/50 rounded-md">
                         <p class="text-lg mb-6 text-bg-dark/80">
                             El <strong>cifrado americano</strong> (o sistema de notación musical anglosajón) es el sistema más común para <strong>nombrar notas y acordes</strong> de forma universal y simplificada. Como hay siete notas (Do, Re, Mi, Fa, Sol, La, Si), utiliza las siete primeras letras del alfabeto, pero empezando por la C. 
@@ -365,8 +350,6 @@
                         </ul>
                     </div>
                 </div>
-
-
             </section>
 
             <section id="game-view" class="hidden">
@@ -382,10 +365,10 @@
                     <p id="progress-text" class="text-sm font-medium text-gray-700 mb-6">Presiona "Empezar Desafío" para comenzar</p>
                     <div class="p-8 bg-white rounded-xl shadow-inner mb-6 min-h-[250px] flex flex-col justify-center items-center">
                         <p id="question-prompt" class="text-2xl font-semibold mb-4 text-primary">Presiona el botón de inicio</p>
-                        <!-- Contenedor del SVG para figuras rítmicas en el juego -->
+                        <!-- SVG para figuras rítmicas -->
                         <div id="rhythm-question-element" class="w-[80px] h-[120px] text-bg-dark transform transition duration-500 hidden"></div>
                         <div id="note-question-element" class="game-staff-container hidden">
-                            <!-- Contenedor para el SVG de la clave de sol en la vista de juego, AHORA AMPLIADO a h-[150px] -->
+                            <!-- SVG Clave de Sol -->
                             <div class="treble-clef" style="left: 5px; top: 75px; transform: translateY(-50%);" id="game-treble-clef"></div>
                             <div class="game-staff-line" style="top: 115px;"></div>
                             <div class="game-staff-line" style="top: 92.5px;"></div>
@@ -405,50 +388,53 @@
     </div>
 
 <script>
+    // --- CONSTANTES ---
     const MAX_QUESTIONS = 10;
     const POINTS_PER_CORRECT_ANSWER = 10;
-    let currentView = 'learn';
-    let score = 0;
-    let questionCounter = 0;
-    let currentQuestion = null;
-    let isGameActive = false;
-    // Historial para evitar repeticiones: guarda los IDs de los últimos elementos usados.
-    // El tamaño (3) es un buen equilibrio para evitar repeticiones directas sin agotar opciones.
-    let questionHistory = []; 
     const HISTORY_SIZE = 3; 
+    
+    // Paleta de colores para las notas (Sección Aprender)
+    const NOTE_COLORS = {
+        'Do': '#ef4444',   // Rojo
+        'Re': '#f97316',   // Naranja
+        'Mi': '#fbbf24',   // Amarillo
+        'Fa': '#84cc16',   // Verde Lima
+        'Sol': '#14b8a6',  // Turquesa
+        'La': '#8b5cf6',   // Violeta
+        'Si': '#ec4899'    // Rosa/Magenta
+    };
 
-    // SVG para la nueva Clave de Sol
+    // Mapeo Cifrado Americano <-> Español
+    const AMERICAN_TO_SPANISH = { 'C': 'Do', 'D': 'Re', 'E': 'Mi', 'F': 'Fa', 'G': 'Sol', 'A': 'La', 'B': 'Si' };
+    const SPANISH_TO_AMERICAN = { 'Do': 'C', 'Re': 'D', 'Mi': 'E', 'Fa': 'F', 'Sol': 'G', 'La': 'A', 'Si': 'B' };
+    const AMERICAN_NOTES = Object.keys(AMERICAN_TO_SPANISH);
+    const SPANISH_NOTES = Object.values(AMERICAN_TO_SPANISH);
+
+    // Duraciones posibles
+    const allDurations = ['4 Tiempos', '2 Tiempos', '1 Tiempo', '1/2 Tiempo', '3 Tiempos', '1/4 Tiempo'];
+    // Nombres de notas para generación de opciones
+    const allNoteNames = ['Do', 'Re', 'Mi', 'Fa', 'Sol', 'La', 'Si']; 
+    // Posiciones horizontales para la sección de Aprender
+    const HORIZONTAL_POSITIONS_LEARN = [20, 30, 40, 50, 60, 70, 80, 90];
+
+    // SVG: Clave de Sol
     const TREBLE_CLEF_SVG = `<svg viewBox="0 0 100 150" class="w-full h-full fill-current">
         <path d="M 51.6875 5.25 C 46.2614 5.10907 39.913601 18.0682 40.125 29.625 C 40.173525 33.145495 41.284906 40.284396 42.90625 49.25 C 32.682506 59.830802 20.8125 70.690344 20.8125 84.9375 C 20.6493 97.9951 28.628901 114.63275 47.5625 114.46875 C 50.468496 114.45379 53.083256 114.08551 55.40625 113.46875 C 57.136863 122.96051 58.28755 130.44986 58.28125 133.90625 C 58.342289 147.54665 40.421185 148.89665 39.5625 141.0625 C 43.339077 140.933 46.343749 137.92554 46.34375 134.21875 C 46.34375 130.42875 43.205801 127.34375 39.3125 127.34375 C 37.17097 127.34375 35.262735 128.28174 33.96875 129.75 C 33.939474 129.78322 33.90363 129.80999 33.875 129.84375 C 33.582537 130.14805 33.337402 130.5242 33.09375 130.9375 C 32.296132 132.29048 31.777697 134.23 31.75 137 C 31.75 148.425 60.624999 155.77399 60.625 133.25 C 60.670146 130.22476 59.367494 122.53454 57.46875 112.84375 C 78.071859 105.38688 72.895938 74.799768 53.9375 74.65625 C 52.467771 74.671103 51.05116 74.841958 49.6875 75.1875 C 48.608241 69.990611 47.566125 64.946633 46.65625 60.3125 C 53.855246 53.240996 60.140557 44.087537 60 27.21875 C 60.0222 15.10525 55.986101 5.3909999 51.6875 5.25 z M 52.96875 16.96875 C 55.424716 16.731569 57.375 19.01225 57.375 24.03125 C 57.5739 32.651306 51.535029 40.178824 44.34375 47.75 C 43.656193 43.603397 43.204863 40.242781 43.15625 38.25 C 43.36025 24.784313 48.875473 17.364052 52.96875 16.96875 z M 45.25 61.65625 C 46.126787 66.171363 47.074325 70.927645 48.03125 75.71875 C 35.482648 80.183291 29.46094 97.673077 47.25 105.5 C 36.406884 96.268947 41.744469 85.342498 49.5625 83.4375 C 51.528076 93.254463 53.447767 102.93731 55 111.3125 C 52.892622 112.04572 50.433588 112.48076 47.5625 112.5 C 40.3808 112.5 26.03125 107.9268 26.03125 90.625 C 26.03125 76.131062 36.077645 70.241463 45.25 61.65625 z M 51.34375 83.125 C 51.657197 83.106322 51.995516 83.113673 52.3125 83.125 C 65.37492 83.125 70.302125 103.86782 57 110.5 C 55.344959 102.18075 53.338378 92.63963 51.34375 83.125 z "/>
     </svg>`;
 
-
-    // Objeto con los SVGs proporcionados
+    // SVG: Figuras Musicales y Silencios
     const SVG_ICONS = {
-        // Figuras (Notes)
         'Redonda': `<svg viewBox="0 0 80 120" class="w-full h-full"><g transform="scale(0.07) translate(415, 867)"><path fill="currentColor" d="m 215,112 c -50,0 -69,-43 -69,-88 0,-77 57,-136 134,-136 50,0 69,43 69,88 0,77 -57,136 -134,136 z M 495,0 c 0,-43 -35,-76 -73,-97 -53,-30 -113,-41 -174,-41 -61,0 -122,11 -175,41 -38,21 -73,54 -73,97 0,43 35,76 73,97 53,30 114,41 175,41 61,0 121,-11 174,-41 38,-21 73,-54 73,-97 z"/></g></svg>`,
         'Blanca': `<svg viewBox="0 0 80 120" class="w-full h-full"><g transform="scale(1.8) translate(-220, -190)"><g transform="rotate(180, 240, 230)"><path fill="currentColor" fill-rule="evenodd" d="M 237.68484,218.18353 C 234.289,220.0035 232.47956,223.29808 233.59262,225.77649 C 234.77988,228.42013 238.85963,229.16621 242.6992,227.44186 C 246.53876,225.7175 248.69136,222.17246 247.5041,219.52883 C 246.31683,216.88519 242.23709,216.13911 238.39752,217.86346 C 238.15755,217.97123 237.91124,218.0622 237.68484,218.18353 z M 238.79457,220.42569 C 239.0358,220.30136 239.28005,220.20766 239.53576,220.09282 C 242.80883,218.62288 245.96997,218.55375 246.59187,219.93851 C 247.21377,221.32327 245.06209,223.64013 241.78902,225.11008 C 238.51594,226.58002 235.3548,226.64915 234.73291,225.26439 C 234.15959,223.98781 235.94804,221.89278 238.79457,220.42569 z "/> <path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" d="M 234.05234,224.51692 L 234.05234,258.10449"/></g></g></svg>`,
-        // Negra (Ajustado el translate a (-70, -40) para centrarla visualmente mejor)
         'Negra': `<svg viewBox="0 0 80 120" class="w-full h-full"><g transform="scale(0.8) translate(-70, -60)"><path fill="currentColor" d="m 114.62603,190.24722 c 3.08345,0.0402 6.42199,-0.73449 9.57812,-2.22266 6.942,-3.27613 11.82613,-9.41389 12,-15.08008 l 0.0137,0 0,-91.251944 c 0,0 0.0763,-0.44172 -0.36246,-0.62758 -0.38564,-0.16337 -1.897,-0.16658 -2.23897,3.4e-4 -0.36348,0.17743 -0.31654,0.62723 -0.31654,0.62723 l 0,84.464834 c -3.90219,-3.36802 -10.9033,-3.54143 -17.50586,-0.43359 -8.65172,4.07873 -13.78232,12.37845 -11.45899,18.53711 1.38888,3.68039 5.23971,5.92044 10.29102,5.98633 z"/></g></svg>`,
         'Corchea': `<svg viewBox="0 0 80 120" class="w-full h-full"><g transform="scale(0.9) translate(-0, 20)"><path fill="currentColor" d="M 23.7,87.9 C 18.1,82.8 21.2,74.7 30.4,69.9 C 33.5,68.4 35.8,67.7 39.8,67.8 C 42.3,67.9 45.1,69.3 45.1,69.3 C 45.1,51.2 45.0,17.0 45.0,0.2 C 46.0,0.2 46.7,0.1 48.1,0.1 C 48.1,1.1 48.1,1.9 48.1,2.7 C 48.1,3.6 48.1,4.1 48.2,4.7 C 49.2,11.0 50.6,13.5 57.6,21.2 C 66.5,31.1 69.1,37.0 69.1,44.9 C 69.0,52.3 62.5,68.1 61.1,67.5 C 63.1,61.9 65.9,55.9 66.6,50.9 C 67.5,44.8 65.0,36.2 61.0,31.7 C 57.8,27.9 50.2,24.6 48.1,24.6 C 48.1,24.6 48.0,61.0 48.0,74.8 C 48.0,77.1 45.9,81.2 44.7,82.6 C 39.2,89.2 28.5,92.2 23.7,87.9 z"/></g></svg>`,
-        // Silencios (Rests)
         'Silencio de Redonda': `<svg viewBox="0 0 80 120" class="w-full h-full"><line x1="15" y1="35" x2="65" y2="35" stroke="currentColor" stroke-width="2"/><rect x="25" y="35" width="30" height="10" fill="currentColor"/></svg>`,
         'Silencio de Blanca': `<svg viewBox="0 0 80 120" class="w-full h-full"><rect x="25" y="55" width="30" height="10" fill="currentColor"/><line x1="15" y1="65" x2="65" y2="65" stroke="currentColor" stroke-width="2"/></svg>`,
         'Silencio de Negra': `<svg viewBox="0 0 80 120" class="w-full h-full"><g transform="scale(0.18) translate(-180, -200)"><path fill="currentColor" d="m414.37 453.28c0 18.812-37.624 47.03-37.624 84.655 0 14.109 28.218 56.436 47.03 79.952-9.4061-4.703-18.812-9.4061-32.921-9.4061-28.218 0-37.624 23.515-37.624 37.624 0 9.4061 9.4061 18.812 14.109 28.218-28.218-18.812-47.03-37.624-47.03-56.436 0-47.03 32.122-30.57 55.637-39.976-23.515-23.515-46.231-58.788-46.231-72.897 0-9.4061 28.218-42.327 37.624-65.842v-14.109c0-14.109-9.4061-32.921-14.109-47.03 18.812 23.515 61.139 65.843 61.139 75.249z"/></g></svg>`,
         'Silencio de Corchea': `<svg viewBox="0 0 80 120" class="w-full h-full"><g transform="scale(5) translate(-524, -67)"><path fill="currentColor" d="M 531.098,74.847 C 530.578,74.945 530.18,75.304 530,75.8 C 529.961,75.96 529.961,75.999 529.961,76.218 C 529.961,76.519 529.98,76.679 530.121,76.917 C 530.320,77.316 530.738,77.636 531.215,77.753 C 531.715,77.894 532.551,77.773 533.508,77.456 L 533.746,77.374 L 532.57,80.624 L 531.414,83.87 C 531.414,83.87 531.453,83.89 531.516,83.933 C 531.633,84.011 531.832,84.07 531.973,84.07 C 532.211,84.07 532.512,83.933 532.551,83.812 C 532.551,83.773 533.109,81.878 533.785,79.628 L 534.98,75.503 L 534.941,75.445 C 534.844,75.324 534.645,75.285 534.523,75.382 C 534.484,75.421 534.422,75.503 534.383,75.562 C 534.203,75.863 533.746,76.398 533.508,76.597 C 533.289,76.777 533.168,76.796 532.969,76.718 C 532.789,76.62 532.73,76.519 532.609,75.98 C 532.492,75.445 532.352,75.202 532.051,75.003 C 531.773,74.824 531.414,74.765 531.098,74.847 z "/></g></svg>`,
     };
 
-    // Mapeo de notas (Cifrado Americano a Español)
-    const AMERICAN_TO_SPANISH = {
-        'C': 'Do', 'D': 'Re', 'E': 'Mi', 'F': 'Fa', 'G': 'Sol', 'A': 'La', 'B': 'Si'
-    };
-    const SPANISH_TO_AMERICAN = {
-        'Do': 'C', 'Re': 'D', 'Mi': 'E', 'Fa': 'F', 'Sol': 'G', 'La': 'A', 'Si': 'B'
-    };
-    const AMERICAN_NOTES = Object.keys(AMERICAN_TO_SPANISH);
-    const SPANISH_NOTES = Object.values(AMERICAN_TO_SPANISH);
-
-    // Actualización de rhythmData para usar los SVGs
+    // --- DATOS ---
     const rhythmData = [
         { id: 'R0', symbol: SVG_ICONS['Redonda'], name: 'Redonda', answer: '4 Tiempos' },
         { id: 'R1', symbol: SVG_ICONS['Blanca'], name: 'Blanca', answer: '2 Tiempos' },
@@ -459,9 +445,7 @@
         { id: 'S2', symbol: SVG_ICONS['Silencio de Negra'], name: 'Silencio de Negra', answer: '1 Tiempo' },
         { id: 'S3', symbol: SVG_ICONS['Silencio de Corchea'], name: 'Silencio de Corchea', answer: '1/2 Tiempo' },
     ];
-    const allDurations = ['4 Tiempos', '2 Tiempos', '1 Tiempo', '1/2 Tiempo', '3 Tiempos', '1/4 Tiempo'];
 
-    // Las posiciones verticales se ajustan en la función renderStaffNotes para acomodar el nuevo tamaño de clave
     const NOTES_DATA = [
         { id: 'N0', name: 'Do', position: 137.5, hasLedger: true },
         { id: 'N1', name: 'Re', position: 126.25, hasLedger: false },
@@ -475,11 +459,8 @@
         { id: 'N9', name: 'Mi (Agudo)', position: 36.25, hasLedger: false },
         { id: 'N10', name: 'Fa (Agudo)', position: 25, hasLedger: false },
     ];
-    // Se ajustó allNoteNames para incluir los nombres únicos, sin repetición de "Do", "Re", etc.
-    // Esto asegura opciones variadas en el juego de notas.
-    const allNoteNames = ['Do', 'Re', 'Mi', 'Fa', 'Sol', 'La', 'Si']; 
 
-    const HORIZONTAL_POSITIONS_LEARN = [20, 30, 40, 50, 60, 70, 80, 90];
+    // --- FUNCIONES DE RENDERIZADO Y UI ---
 
     function setView(view) {
         currentView = view;
@@ -494,7 +475,6 @@
         }
     }
 
-    // Nueva función para inyectar los SVGs en la sección de Aprender y el Árbol Rítmico
     function renderSvgsForLearnSection() {
         document.querySelectorAll('[data-figure]').forEach(el => {
             const figureName = el.getAttribute('data-figure');
@@ -504,21 +484,13 @@
         });
     }
     
-    // Función para inyectar el SVG de la Clave de Sol
     function renderTrebleClef() {
-        // Render View Learn Clef (180px height)
         const learnClef = document.getElementById('learn-treble-clef');
-        if (learnClef) {
-            learnClef.innerHTML = TREBLE_CLEF_SVG;
-        }
+        if (learnClef) learnClef.innerHTML = TREBLE_CLEF_SVG;
 
-        // Render Game View Clef (150px height)
         const gameClef = document.getElementById('game-treble-clef');
-        if (gameClef) {
-            gameClef.innerHTML = TREBLE_CLEF_SVG;
-        }
+        if (gameClef) gameClef.innerHTML = TREBLE_CLEF_SVG;
     }
-
 
     function renderStaffNotes() {
         const staffContainer = document.getElementById('staff-container');
@@ -529,18 +501,22 @@
 
         LEARN_NOTES_DATA.forEach((note, index) => {
             const leftPercent = HORIZONTAL_POSITIONS_LEARN[index];
-            const topPositionLearn = 160 - (index * 12.5); // 12.5px es el espacio vertical entre nota y nota
+            const topPositionLearn = 160 - (index * 12.5);
             
             const noteElement = document.createElement('div');
             noteElement.className = 'note';
             noteElement.style.top = `${topPositionLearn}px`;
             noteElement.style.left = `${leftPercent}%`;
             
+            const noteNameSimple = note.name.split(' ')[0];
+            const noteColor = NOTE_COLORS[noteNameSimple] || '#000000';
+
             const dot = document.createElement('span');
             dot.className = 'note-dot';
+            dot.style.backgroundColor = noteColor; 
             noteElement.appendChild(dot);
             
-            if (note.name.includes('Do') && index === 0) { // El Do central tiene línea adicional
+            if (note.name.includes('Do') && index === 0) { 
                 const externalLedgerLine = document.createElement('div');
                 externalLedgerLine.className = 'ledger-line';
                 externalLedgerLine.style.top = `${topPositionLearn}px`;
@@ -552,9 +528,9 @@
             staffContainer.appendChild(noteElement);
 
             const labelItem = document.createElement('div');
-            // Muestra solo 'Do', 'Re', etc. en la sección de aprender
-            labelItem.textContent = note.name.split(' ')[0]; 
-            labelItem.className = 'text-center text-xl font-extrabold text-primary absolute hover:text-secondary transition duration-100 cursor-pointer';
+            labelItem.textContent = noteNameSimple; 
+            labelItem.className = 'text-center text-xl font-extrabold absolute hover:opacity-80 transition duration-100 cursor-pointer';
+            labelItem.style.color = noteColor; 
             labelItem.style.left = `${leftPercent}%`;
             labelItem.style.transform = 'translateX(-50%)';
             labelItem.style.top = '0px';
@@ -562,7 +538,7 @@
         });
     }
 
-    // Función Debounce para limitar llamadas a drawRhythmTreeConnections
+    // Debounce y Canvas
     const debounce = (func, delay) => {
         let timeoutId;
         return function(...args) {
@@ -645,6 +621,8 @@
         drawGroup('l3-negra-4', ['l4-corchea-7', 'l4-corchea-8']);
     }
 
+    // --- LÓGICA DEL JUEGO ---
+
     function handleNextOrRestart() {
         if (document.getElementById('next-button').textContent === 'Volver a Empezar') {
             resetGame();
@@ -657,7 +635,7 @@
         isGameActive = false;
         score = 0;
         questionCounter = 0;
-        questionHistory = []; // Resetear el historial al reiniciar el juego
+        questionHistory = []; 
         document.getElementById('score').textContent = score;
         document.getElementById('next-button').textContent = 'Empezar Desafío';
         document.getElementById('next-button').classList.remove('hidden');
@@ -699,36 +677,21 @@
         }
     }
 
-    // Función principal para generar preguntas
     function generateQuestion() {
         document.getElementById('rhythm-question-element').classList.remove('animate-wiggle', 'animate-pulse_small');
         document.getElementById('note-question-element').classList.remove('animate-wiggle', 'animate-pulse_small');
         
         let type;
-        // Estrategia de juego actualizada:
-        // 1-3: Duración de figuras con nombre (duration_named)
-        // 4-5: Duración de figuras sin nombre (duration_unnamed)
-        // 6-8: Lectura de notas en el pentagrama (note_reading)
-        // 9-10: Conversión de cifrado americano (chord_cipher)
-        
-        if (questionCounter <= 3) {
-            type = 'duration_named';
-        } else if (questionCounter <= 5) {
-            type = 'duration_unnamed';
-        } else if (questionCounter <= 8) {
-            type = 'note_reading';
-        } else {
-            type = 'chord_cipher';
-        }
+        if (questionCounter <= 3) type = 'duration_named';
+        else if (questionCounter <= 5) type = 'duration_unnamed';
+        else if (questionCounter <= 8) type = 'note_reading';
+        else type = 'chord_cipher';
 
         currentQuestion = generateQuestionByType(type);
         
-        // Agregar la ID de la pregunta actual al historial
         if (currentQuestion && currentQuestion.id) {
             questionHistory.push(currentQuestion.id);
-            if (questionHistory.length > HISTORY_SIZE) {
-                questionHistory.shift(); // Mantiene el historial limitado
-            }
+            if (questionHistory.length > HISTORY_SIZE) questionHistory.shift();
         }
 
         document.getElementById('question-prompt').textContent = currentQuestion.prompt;
@@ -739,17 +702,11 @@
 
     function generateQuestionByType(type) {
         switch (type) {
-            case 'duration_named':
-                return generateDurationQuestion(true); // Mostrar nombre
-            case 'duration_unnamed':
-                return generateDurationQuestion(false); // No mostrar nombre
-            case 'note_reading':
-                return generateNoteQuestion();
-            case 'chord_cipher':
-                return generateCipherQuestion();
-            default:
-                // Fallback a preguntas de duración con nombre
-                return generateDurationQuestion(true); 
+            case 'duration_named': return generateDurationQuestion(true);
+            case 'duration_unnamed': return generateDurationQuestion(false);
+            case 'note_reading': return generateNoteQuestion();
+            case 'chord_cipher': return generateCipherQuestion();
+            default: return generateDurationQuestion(true); 
         }
     }
 
@@ -757,11 +714,8 @@
         document.getElementById('rhythm-question-element').classList.remove('hidden');
         document.getElementById('note-question-element').classList.add('hidden');
         
-        // Filtrar figuras que están en el historial reciente
         const availableRhythms = rhythmData.filter(data => !questionHistory.includes(data.id));
-        
         const pool = availableRhythms.length > 0 ? availableRhythms : rhythmData;
-        
         const randomIndex = Math.floor(Math.random() * pool.length);
         const data = pool[randomIndex];
         
@@ -780,9 +734,7 @@
         const incorrectOptions = allDurations.filter(d => d !== data.answer);
         while (options.length < 4) {
             const randomIncorrect = incorrectOptions[Math.floor(Math.random() * incorrectOptions.length)];
-            if (!options.includes(randomIncorrect)) {
-                options.push(randomIncorrect);
-            }
+            if (!options.includes(randomIncorrect)) options.push(randomIncorrect);
         }
         options.sort(() => Math.random() - 0.5);
         return { 
@@ -799,26 +751,19 @@
         document.getElementById('note-question-element').classList.remove('hidden');
         document.getElementById('question-name').textContent = '';
         
-        // Filtrar notas que están en el historial reciente (usamos ids 'N0', 'N1', etc.)
         const availableNotes = NOTES_DATA.filter(data => !questionHistory.includes(data.id));
-
         const pool = availableNotes.length > 0 ? availableNotes : NOTES_DATA;
-
         const randomIndex = Math.floor(Math.random() * pool.length);
         const data = pool[randomIndex];
 
         renderSingleNote(data);
-        
-        // Usar solo el nombre de la nota (ej: 'Do' en lugar de 'Do (Agudo)') para la respuesta
         const correctNoteName = data.name.split(' ')[0]; 
 
         let options = [correctNoteName];
         let namesPool = [...allNoteNames];
         while (options.length < 4) {
             const randomName = namesPool[Math.floor(Math.random() * namesPool.length)];
-            if (!options.includes(randomName)) {
-                options.push(randomName);
-            }
+            if (!options.includes(randomName)) options.push(randomName);
             namesPool = namesPool.filter(n => !options.includes(n));
         }
         options.sort(() => Math.random() - 0.5);
@@ -836,54 +781,35 @@
         document.getElementById('note-question-element').classList.add('hidden');
         document.getElementById('question-name').textContent = '';
         
-        const type = Math.random() < 0.5 ? 'A_to_S' : 'S_to_A'; // Americano a Español o viceversa
-        
+        const type = Math.random() < 0.5 ? 'A_to_S' : 'S_to_A';
         const noteIndex = Math.floor(Math.random() * SPANISH_NOTES.length);
         const spanishNote = SPANISH_NOTES[noteIndex];
         const americanNote = AMERICAN_NOTES[noteIndex];
 
-        let prompt;
-        let correctAnswer;
-        let options;
+        let prompt, correctAnswer, options;
         
         if (type === 'A_to_S') {
             prompt = `¿Qué nota representa el cifrado "${americanNote}"?`;
             correctAnswer = spanishNote;
             options = [correctAnswer];
-            
             const incorrectOptions = SPANISH_NOTES.filter(n => n !== spanishNote);
             while (options.length < 4) {
                 const randomIncorrect = incorrectOptions[Math.floor(Math.random() * incorrectOptions.length)];
-                if (!options.includes(randomIncorrect)) {
-                    options.push(randomIncorrect);
-                }
+                if (!options.includes(randomIncorrect)) options.push(randomIncorrect);
             }
-        } else { // S_to_A
+        } else { 
             prompt = `¿Cuál es el cifrado americano para la nota "${spanishNote}"?`;
             correctAnswer = americanNote;
             options = [correctAnswer];
-
             const incorrectOptions = AMERICAN_NOTES.filter(n => n !== americanNote);
             while (options.length < 4) {
                 const randomIncorrect = incorrectOptions[Math.floor(Math.random() * incorrectOptions.length)];
-                if (!options.includes(randomIncorrect)) {
-                    options.push(randomIncorrect);
-                }
+                if (!options.includes(randomIncorrect)) options.push(randomIncorrect);
             }
         }
-
         options.sort(() => Math.random() - 0.5);
-
-        // Se usa un ID temporal para el historial para esta ronda de preguntas
         const questionId = `C_${type}_${noteIndex}`; 
-        
-        return {
-            id: questionId,
-            type: 'chord_cipher',
-            prompt: prompt,
-            correctAnswer: correctAnswer,
-            options: options
-        };
+        return { id: questionId, type: 'chord_cipher', prompt: prompt, correctAnswer: correctAnswer, options: options };
     }
 
     function renderSingleNote(noteData) {
@@ -896,6 +822,7 @@
         noteElement.style.left = `${leftPercent}%`;
         const dot = document.createElement('span');
         dot.className = 'note-dot';
+        dot.style.backgroundColor = '#000000'; // Notas negras en juego
         noteElement.appendChild(dot);
         if (noteData.hasLedger) {
             const externalLedgerLine = document.createElement('div');
@@ -981,17 +908,15 @@
         document.querySelectorAll('.option-btn').forEach(btn => { btn.disabled = false; });
     }
 
-    // Debounce aplicado a la función de redibujado
     const debouncedDrawRhythmTreeConnections = debounce(drawRhythmTreeConnections, 200);
 
     window.onload = function() {
-        renderSvgsForLearnSection(); // Inyecta los SVGs de las figuras
-        renderTrebleClef(); // NUEVO: Inyecta el SVG de la Clave de Sol
+        renderSvgsForLearnSection(); 
+        renderTrebleClef(); 
         renderStaffNotes();
         drawRhythmTreeConnections();
         resetGame();
         setView('learn');
-        // Usar la función debounced para onresize
         window.onresize = debouncedDrawRhythmTreeConnections;
     };
 </script>
